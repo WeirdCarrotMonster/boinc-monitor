@@ -1,6 +1,10 @@
 import asyncio
 from typing import Set, Awaitable, Iterable
 from contextlib import contextmanager, suppress
+import logging
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class ListenerPool:
@@ -19,9 +23,11 @@ class ListenerPool:
 
         try:
             self.has_listeners.set()
+            LOGGER.debug("Adding event listener, total count %s", len(self.listener_queue))
             yield queue
         finally:
             self.listener_queue.remove(queue)
+            LOGGER.debug("Removing event listener, total count %s", len(self.listener_queue))
             if not self.listener_queue:
                 self.has_listeners.clear()
 

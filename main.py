@@ -7,6 +7,7 @@ import sys
 from aiohttp import web
 from aiohttp.web import Response
 from aiohttp_sse import sse_response
+import logging
 from datetime import datetime
 import json
 from urllib.parse import urlparse, parse_qs
@@ -51,6 +52,7 @@ def setup_pools(app, clients):
 def build_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument("--client", action="append")
+    parser.add_argument("--loglevel", choices=("INFO", "DEBUG"), default="INFO")
     return parser
 
 
@@ -58,7 +60,6 @@ def build_client_list(raw_client_list):
     clients = []
 
     for raw_client in raw_client_list:
-        print(raw_client)
         parsed = urlparse(raw_client)
         params = parse_qs(parsed.query)
         
@@ -85,6 +86,8 @@ def build_client_list(raw_client_list):
 def main():
     parser = build_parser()
     args = parser.parse_args()
+
+    logging.basicConfig(level=args.loglevel)
 
     app = build_app()
     setup_pools(app, build_client_list(args.client))
