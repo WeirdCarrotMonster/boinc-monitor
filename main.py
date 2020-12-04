@@ -18,7 +18,6 @@ async def results(request):
                 data = json.dumps(gui_info.asdict)
 
                 await resp.send(data)
-                await asyncio.sleep(1)
     return resp
 
 
