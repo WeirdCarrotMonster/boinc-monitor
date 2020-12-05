@@ -50,7 +50,10 @@ class ListenerPool:
             if stopped in done:
                 break
 
-            result = await callback()
+            try:
+                result = await callback()
+            except:
+                LOGGER.exception("Failed to get callback data")
 
             for queue in self.listener_queue:
                 with suppress(asyncio.QueueFull):
