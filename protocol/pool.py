@@ -23,11 +23,15 @@ class ListenerPool:
 
         try:
             self.has_listeners.set()
-            LOGGER.debug("Adding event listener, total count %s", len(self.listener_queue))
+            LOGGER.debug(
+                "Adding event listener, total count %s", len(self.listener_queue)
+            )
             yield queue
         finally:
             self.listener_queue.remove(queue)
-            LOGGER.debug("Removing event listener, total count %s", len(self.listener_queue))
+            LOGGER.debug(
+                "Removing event listener, total count %s", len(self.listener_queue)
+            )
             if not self.listener_queue:
                 self.has_listeners.clear()
 

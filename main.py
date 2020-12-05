@@ -26,7 +26,8 @@ async def results(request):
 
 
 async def index(request):
-    return web.FileResponse('gui/dist/index.html')
+    return web.FileResponse("gui/dist/index.html")
+
 
 async def start_pools(app):
     for pool in app["pools"].values():
@@ -46,7 +47,9 @@ def build_app():
 
 
 def setup_pools(app, clients):
-    app["pools"] = {"simple_gui_info": ListenerPool([client.simple_gui_info for client in clients])}
+    app["pools"] = {
+        "simple_gui_info": ListenerPool([client.simple_gui_info for client in clients])
+    }
 
 
 def build_parser():
@@ -62,7 +65,7 @@ def build_client_list(raw_client_list):
     for raw_client in raw_client_list:
         parsed = urlparse(raw_client)
         params = parse_qs(parsed.query)
-        
+
         host = parsed.hostname
         port = parsed.port or 31416
         password = parsed.password
@@ -72,13 +75,7 @@ def build_client_list(raw_client_list):
         else:
             name = host
 
-        clients.append(BoincClient(
-            host=host,
-            port=port,
-            password=password,
-            name=name
-        ))
-
+        clients.append(BoincClient(host=host, port=port, password=password, name=name))
 
     return clients
 
