@@ -5,7 +5,7 @@ from hashlib import md5
 from typing import NamedTuple, Optional, List
 from xml.etree import ElementTree
 from functools import cached_property
-
+from datetime import datetime
 from . import dto
 
 END_CHAR = b"\003"
@@ -121,7 +121,20 @@ class BoincClient:
             result = dto.Result(
                 name=get_value(result_elem, "name"),
                 wu_name=get_value(result_elem, "wu_name"),
+                platform=get_value(result_elem, "platform"),
                 project_url=get_value(result_elem, "project_url"),
+                final_cpu_time=float(get_value(result_elem, "final_cpu_time")),
+                final_elapsed_time=float(get_value(result_elem, "final_elapsed_time")),
+                estimated_cpu_time_remaining=float(
+                    get_value(result_elem, "estimated_cpu_time_remaining")
+                ),
+                state=dto.ResultState(int(get_value(result_elem, "state"))),
+                received_time=datetime.fromtimestamp(
+                    float(get_value(result_elem, "received_time"))
+                ),
+                report_deadline=datetime.fromtimestamp(
+                    float(get_value(result_elem, "report_deadline"))
+                ),
                 active_task=active_task,
             )
             results.append(result)

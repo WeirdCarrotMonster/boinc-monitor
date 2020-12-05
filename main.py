@@ -19,7 +19,7 @@ async def results(request):
         with request.app["pools"]["simple_gui_info"].listen_queue() as queue:
             while True:
                 gui_info = await queue.get()
-                data = json.dumps(gui_info.asdict)
+                data = json.dumps(gui_info.asdict, default=str)
 
                 await resp.send(data)
     return resp
