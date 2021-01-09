@@ -115,6 +115,9 @@ class BoincClient:
         for result_elem in response.findall("./simple_gui_info/result"):
             active_task_elem = result_elem.find("./active_task")
             active_task = dto.ActiveTask(
+                active_task_state=dto.ActiveTaskState(
+                    int(get_value(active_task_elem, "active_task_state"))
+                ),
                 fraction_done=float(get_value(active_task_elem, "fraction_done")),
                 elapsed_time=float(get_value(active_task_elem, "elapsed_time")),
             )

@@ -5,6 +5,7 @@
             <thead>
                 <tr>
                     <th>Elapsed</th>
+                    <th>State</th>
                     <th>Progress</th>
                     <th>Percent</th>
                 </tr>
@@ -16,6 +17,9 @@
                 >
                     <td>
                         {{ activeTask.elapsed_time }}
+                    </td>
+                    <td>
+                        {{ activeTask.active_task_state }}
                     </td>
                     <td>
                         <progress 

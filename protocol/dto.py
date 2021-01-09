@@ -1,4 +1,4 @@
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from typing import Optional, List
 from enum import IntEnum
 from datetime import datetime
@@ -16,10 +16,24 @@ class ResultState(IntEnum):
     UploadFailed = 7
 
 
+class ActiveTaskState(IntEnum):
+
+    Uninitialized = 0
+    Executing = 1
+    AbortPending = 5
+    QuitPending = 8
+    Suspended = 9
+    CopyPending = 10
+
+
 @dataclass(frozen=True)
 class HostInfo:
 
     name: str
+
+    @property
+    def asdict(self):
+        return {"name": self.name}
 
 
 @dataclass
@@ -30,12 +44,30 @@ class ProjectInfo:
     user_name: str
     team_name: Optional[str] = None
 
+    @property
+    def asdict(self):
+        return {
+            "project_name": self.project_name,
+            "master_url": self.master_url,
+            "user_name": self.user_name,
+            "team_name": self.team_name,
+        }
+
 
 @dataclass
 class ActiveTask:
 
+    active_task_state: ActiveTaskState
     fraction_done: float
     elapsed_time: float
+
+    @property
+    def asdict(self):
+        return {
+            "active_task_state": self.active_task_state.name,
+            "fraction_done": self.fraction_done,
+            "elapsed_time": self.elapsed_time,
+        }
 
 
 @dataclass
@@ -55,6 +87,22 @@ class Result:
 
     active_task: ActiveTask
 
+    @property
+    def asdict(self):
+        return {
+            "name": self.name,
+            "wu_name": self.wu_name,
+            "platform": self.platform,
+            "project_url": self.project_url,
+            "final_cpu_time": self.final_cpu_time,
+            "final_elapsed_time": self.final_elapsed_time,
+            "estimated_cpu_time_remaining": self.estimated_cpu_time_remaining,
+            "state": self.state.name,
+            "received_time": self.received_time,
+            "report_deadline": self.report_deadline,
+            "active_task": self.active_task.asdict,
+        }
+
 
 @dataclass
 class SimpleGuiInfo:
@@ -65,4 +113,8 @@ class SimpleGuiInfo:
 
     @property
     def asdict(self):
-        return asdict(self)
+        return {
+            "host": self.host.asdict,
+            "projects": [project.asdict for project in self.projects],
+            "results": [result.asdict for result in self.results],
+        }
