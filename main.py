@@ -56,28 +56,45 @@ def build_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument("--client", action="append")
     parser.add_argument("--loglevel", choices=("INFO", "DEBUG"), default="INFO")
+    parser.add_argument("--host", default="0.0.0.0")
+    parser.add_argument("--port", type=int, default=8080)
     return parser
 
 
+def client_from_string(value):
+    parsed = urlparse(value)
+    params = parse_qs(parsed.query)
+
+    host = parsed.hostname
+    port = parsed.port or 31416
+    password = parsed.password
+
+    if name_list := params.get("name"):
+        name = name_list[0]
+    else:
+        name = host
+
+    return BoincClient(host=host, port=port, password=password, name=name)
+
+
+def build_client_list_env():
+    from os import environ
+
+    client_prefix = "BOINC_CLIENT_"
+
+    return [
+        client_from_string(value.removeprefix(client_prefix))
+        for key, value in environ.items()
+        if key.startswith(client_prefix)
+    ]
+
+
 def build_client_list(raw_client_list):
-    clients = []
+    return [
+        client_from_string(client)
+        for client in raw_client_list or ()
+    ]
 
-    for raw_client in raw_client_list:
-        parsed = urlparse(raw_client)
-        params = parse_qs(parsed.query)
-
-        host = parsed.hostname
-        port = parsed.port or 31416
-        password = parsed.password
-
-        if name_list := params.get("name"):
-            name = name_list[0]
-        else:
-            name = host
-
-        clients.append(BoincClient(host=host, port=port, password=password, name=name))
-
-    return clients
 
 
 def main():
@@ -87,9 +104,11 @@ def main():
     logging.basicConfig(level=args.loglevel)
 
     app = build_app()
-    setup_pools(app, build_client_list(args.client))
 
-    web.run_app(app, host="127.0.0.1", port=8080)
+    clients = build_client_list_env() + build_client_list(args.client)
+    setup_pools(app, clients)
+
+    web.run_app(app, host=args.host, port=args.port)
 
 
 if __name__ == "__main__":
