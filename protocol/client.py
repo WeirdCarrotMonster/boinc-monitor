@@ -62,7 +62,6 @@ class BoincConnection(NamedTuple):
         return parsed
 
 
-
 @dataclass
 class BoincClient:
 
@@ -70,7 +69,7 @@ class BoincClient:
     port: int = 31416
     password: Optional[str] = None
     name: Optional[str] = None
-    
+
     host_info: dto.HostInfo = None
 
     def __post_init__(self):

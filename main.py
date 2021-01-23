@@ -71,11 +71,7 @@ def client_from_string(value):
 
 
 def build_client_list(raw_client_list):
-    return [
-        client_from_string(client)
-        for client in raw_client_list or ()
-    ]
-
+    return [client_from_string(client) for client in raw_client_list or ()]
 
 
 def main():
