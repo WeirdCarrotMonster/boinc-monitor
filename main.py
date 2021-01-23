@@ -2,6 +2,8 @@
 from protocol.client import BoincClient
 from protocol.pool import ListenerPool
 
+import config
+
 import asyncio
 import sys
 from aiohttp import web
@@ -52,15 +54,6 @@ def setup_pools(app, clients):
     }
 
 
-def build_parser():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--client", action="append")
-    parser.add_argument("--loglevel", choices=("INFO", "DEBUG"), default="INFO")
-    parser.add_argument("--host", default="0.0.0.0")
-    parser.add_argument("--port", type=int, default=8080)
-    return parser
-
-
 def client_from_string(value):
     parsed = urlparse(value)
     params = parse_qs(parsed.query)
@@ -77,18 +70,6 @@ def client_from_string(value):
     return BoincClient(host=host, port=port, password=password, name=name)
 
 
-def build_client_list_env():
-    from os import environ
-
-    client_prefix = "BOINC_CLIENT_"
-
-    return [
-        client_from_string(value.removeprefix(client_prefix))
-        for key, value in environ.items()
-        if key.startswith(client_prefix)
-    ]
-
-
 def build_client_list(raw_client_list):
     return [
         client_from_string(client)
@@ -98,17 +79,14 @@ def build_client_list(raw_client_list):
 
 
 def main():
-    parser = build_parser()
-    args = parser.parse_args()
-
-    logging.basicConfig(level=args.loglevel)
+    logging.basicConfig(level=config.log_level)
 
     app = build_app()
 
-    clients = build_client_list_env() + build_client_list(args.client)
+    clients = build_client_list(config.clients)
     setup_pools(app, clients)
 
-    web.run_app(app, host=args.host, port=args.port)
+    web.run_app(app, host=config.host, port=config.port)
 
 
 if __name__ == "__main__":
