@@ -24,6 +24,7 @@
                     <td>
                         <progress 
                             class="progress"
+                            :class="[activeTask.active_task_state == 'Executing' ? 'is-success' : '' ]"
                             max="1" 
                             v-bind:value="activeTask.fraction_done"
                         />
