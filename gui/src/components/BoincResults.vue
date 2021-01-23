@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div class="section">
         <Host 
             v-for="(hostData, hostKey) in hostInfos"
             :key="hostKey"

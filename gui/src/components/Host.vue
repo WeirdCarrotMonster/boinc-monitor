@@ -1,13 +1,13 @@
 <template>
-    <div class="host-info">
-        <table border="1">
-            <caption>{{ simpleGuiInfo.name }}</caption>
+    <div class="container host-info">
+        <h1 class="title">{{ simpleGuiInfo.name }}</h1>
+        <table class="table is-bordered is-fullwidth">
             <thead>
                 <tr>
-                    <th>Elapsed</th>
-                    <th>State</th>
-                    <th>Progress</th>
-                    <th>Percent</th>
+                    <th class="is-2">Elapsed</th>
+                    <th class="is-4">State</th>
+                    <th class="is-6">Progress</th>
+                    <th class="is-2">Percent</th>
                 </tr>
             </thead>
             <tbody>
@@ -23,6 +23,7 @@
                     </td>
                     <td>
                         <progress 
+                            class="progress"
                             max="1" 
                             v-bind:value="activeTask.fraction_done"
                         />
