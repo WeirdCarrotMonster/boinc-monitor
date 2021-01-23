@@ -52,12 +52,12 @@ class ListenerPool:
 
             try:
                 result = await callback()
+
+                for queue in self.listener_queue:
+                    with suppress(asyncio.QueueFull):
+                        queue.put_nowait(result)
             except:
                 LOGGER.exception("Failed to get callback data")
-
-            for queue in self.listener_queue:
-                with suppress(asyncio.QueueFull):
-                    queue.put_nowait(result)
 
             await asyncio.sleep(self.sleep_time)
 

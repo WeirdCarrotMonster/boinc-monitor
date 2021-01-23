@@ -4,8 +4,8 @@ from contextlib import asynccontextmanager
 from hashlib import md5
 from typing import NamedTuple, Optional, List
 from xml.etree import ElementTree
-from functools import cached_property
 from datetime import datetime
+from dataclasses import dataclass
 from . import dto
 
 END_CHAR = b"\003"
@@ -62,18 +62,19 @@ class BoincConnection(NamedTuple):
         return parsed
 
 
+
+@dataclass
 class BoincClient:
-    def __init__(
-        self,
-        host: str,
-        port: int = 31416,
-        password: Optional[str] = None,
-        name: Optional[str] = None,
-    ):
-        self.host = host
-        self.port = port
-        self.password = password
-        self.name = name
+
+    host: str
+    port: int = 31416
+    password: Optional[str] = None
+    name: Optional[str] = None
+    
+    host_info: dto.HostInfo = None
+
+    def __post_init__(self):
+        self.host_info = dto.HostInfo(self.name or self.host)
 
     @asynccontextmanager
     async def connection(self) -> BoincConnection:
@@ -87,10 +88,6 @@ class BoincClient:
         finally:
             writer.close()
             await writer.wait_closed()
-
-    @cached_property
-    def host_info(self) -> dto.HostInfo:
-        return dto.HostInfo(self.name or self.host)
 
     async def authorize(self, connection: BoincConnection):
         await connection.send_request("auth1", password=self.password)
