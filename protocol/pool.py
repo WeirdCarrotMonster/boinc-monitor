@@ -16,24 +16,26 @@ class ListenerPool:
         self.loaders = loaders
         self.sleep_time = sleep_time
 
-    @contextmanager
-    def listen_queue(self) -> asyncio.Queue:
-        queue = asyncio.Queue(maxsize=5)
-        self.listener_queue.add(queue)
+    def get_listen_queue(self) -> asyncio.Queue:
+        return PoolClient(pool=self, maxsize=5)
+            
+    def add_client(self, client: "PoolClient"):
+        self.listener_queue.add(client)
 
-        try:
-            self.has_listeners.set()
-            LOGGER.debug(
-                "Adding event listener, total count %s", len(self.listener_queue)
-            )
-            yield queue
-        finally:
-            self.listener_queue.remove(queue)
-            LOGGER.debug(
-                "Removing event listener, total count %s", len(self.listener_queue)
-            )
-            if not self.listener_queue:
-                self.has_listeners.clear()
+        self.has_listeners.set()
+        LOGGER.debug(
+            "Adding event listener, total count %s", len(self.listener_queue)
+        )
+
+    def remove_client(self, client: "PoolClient"):
+        self.listener_queue.remove(client)
+
+        LOGGER.debug(
+            "Removing event listener, total count %s", len(self.listener_queue)
+        )
+
+        if not self.listen_queue:
+            self.has_listeners.clear()
 
     async def run_loop_for(self, loader: Awaitable):
         while not self.stopped.is_set():
@@ -74,3 +76,16 @@ class ListenerPool:
 
     def stop(self, *args, **kwargs):
         self.stopped.set()
+
+
+class PoolClient(asyncio.Queue):
+
+    def __init__(self, pool, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._pool = pool
+
+    def __enter__(self):
+        self._pool.add_client(self)
+    
+    def __exit__(self, *args, **kwargs):
+        self._pool.remove_client(self)

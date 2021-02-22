@@ -18,7 +18,9 @@ import argparse
 
 async def results(request):
     async with sse_response(request) as resp:
-        with request.app["pools"]["simple_gui_info"].listen_queue() as queue:
+        queue = request.app["pools"]["simple_gui_info"].get_listen_queue()
+
+        with queue:
             while True:
                 gui_info = await queue.get()
                 data = json.dumps(gui_info.asdict, default=str)
