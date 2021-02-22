@@ -1,7 +1,7 @@
 from dataclasses import dataclass
-from typing import Optional, List
-from enum import IntEnum
 from datetime import datetime
+from enum import IntEnum
+from typing import List, Optional
 
 
 class ResultState(IntEnum):

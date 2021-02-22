@@ -1,8 +1,8 @@
 import asyncio
-from typing import Set, Awaitable, Iterable
-from contextlib import contextmanager, suppress
 import logging
-
+from contextlib import contextmanager, suppress
+from functools import partial
+from typing import Awaitable, Iterable, Set
 
 LOGGER = logging.getLogger(__name__)
 
@@ -16,16 +16,19 @@ class ListenerPool:
         self.loaders = loaders
         self.sleep_time = sleep_time
 
+        self.loop_tasks = []
+
     def get_listen_queue(self) -> asyncio.Queue:
-        return PoolClient(pool=self, maxsize=5)
-            
+        client = PoolClient(maxsize=5)
+        client.on_enter = partial(self.add_client, client=client)
+        client.on_exit = partial(self.remove_client, client=client)
+        return client
+
     def add_client(self, client: "PoolClient"):
         self.listener_queue.add(client)
 
         self.has_listeners.set()
-        LOGGER.debug(
-            "Adding event listener, total count %s", len(self.listener_queue)
-        )
+        LOGGER.debug("Adding event listener, total count %s", len(self.listener_queue))
 
     def remove_client(self, client: "PoolClient"):
         self.listener_queue.remove(client)
@@ -34,7 +37,7 @@ class ListenerPool:
             "Removing event listener, total count %s", len(self.listener_queue)
         )
 
-        if not self.listen_queue:
+        if not self.listener_queue:
             self.has_listeners.clear()
 
     async def run_loop_for(self, loader: Awaitable):
@@ -63,8 +66,8 @@ class ListenerPool:
                         queue.put_nowait(result)
             except GeneratorExit:
                 raise
-            except Exception:
-                LOGGER.exception("Failed to get loader data")
+            except Exception as e:
+                LOGGER.exception("Failed to get loader data: %s", e)
 
             await asyncio.sleep(self.sleep_time)
 
@@ -72,20 +75,22 @@ class ListenerPool:
         self.stopped.clear()
 
         for loader in self.loaders:
-            asyncio.create_task(self.run_loop_for(loader))
+            loop_task = asyncio.create_task(self.run_loop_for(loader))
+            self.loop_tasks.append(loop_task)
 
-    def stop(self, *args, **kwargs):
+    async def stop(self, *args, **kwargs):
         self.stopped.set()
+
+        await asyncio.gather(*self.loop_tasks)
 
 
 class PoolClient(asyncio.Queue):
 
-    def __init__(self, pool, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._pool = pool
+    on_enter = None
+    on_exit = None
 
     def __enter__(self):
-        self._pool.add_client(self)
-    
+        self.on_enter()
+
     def __exit__(self, *args, **kwargs):
-        self._pool.remove_client(self)
+        self.on_exit()

@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
-from protocol.client import BoincClient
-from protocol.pool import ListenerPool
-
-import config
-
+import argparse
 import asyncio
+import json
+import logging
 import sys
+from datetime import datetime
+from urllib.parse import parse_qs, urlparse
+
 from aiohttp import web
 from aiohttp.web import Response
 from aiohttp_sse import sse_response
-import logging
-from datetime import datetime
-import json
-from urllib.parse import urlparse, parse_qs
-import argparse
+
+import config
+from protocol.client import BoincClient
+from protocol.pool import ListenerPool
 
 
 async def results(request):
