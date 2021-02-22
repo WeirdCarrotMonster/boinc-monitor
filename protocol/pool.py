@@ -18,7 +18,7 @@ class ListenerPool:
 
     @contextmanager
     def listen_queue(self) -> asyncio.Queue:
-        queue = asyncio.Queue()
+        queue = asyncio.Queue(maxsize=5)
         self.listener_queue.add(queue)
 
         try:
@@ -47,6 +47,9 @@ class ListenerPool:
             for task in pending:
                 task.cancel()
 
+            for task in done:
+                task.result()
+
             if stopped in done:
                 break
 
@@ -56,7 +59,9 @@ class ListenerPool:
                 for queue in self.listener_queue:
                     with suppress(asyncio.QueueFull):
                         queue.put_nowait(result)
-            except:
+            except GeneratorExit:
+                raise
+            except Exception:
                 LOGGER.exception("Failed to get callback data")
 
             await asyncio.sleep(self.sleep_time)
@@ -65,7 +70,7 @@ class ListenerPool:
         self.stopped.clear()
 
         for callback in self.callbacks:
-            asyncio.ensure_future(self.run_loop_for(callback))
+            asyncio.create_task(self.run_loop_for(callback))
 
     def stop(self, *args, **kwargs):
         self.stopped.set()
