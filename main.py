@@ -58,14 +58,12 @@ def client_from_string(value):
     parsed = urlparse(value)
     params = parse_qs(parsed.query)
 
-    host = parsed.hostname
+    host = name = parsed.hostname
     port = parsed.port or 31416
     password = parsed.password
 
     if name_list := params.get("name"):
         name = name_list[0]
-    else:
-        name = host
 
     return BoincClient(host=host, port=port, password=password, name=name)
 

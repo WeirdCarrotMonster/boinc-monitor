@@ -8,12 +8,12 @@ LOGGER = logging.getLogger(__name__)
 
 
 class ListenerPool:
-    def __init__(self, callbacks: Iterable[Awaitable], sleep_time: int = 1):
+    def __init__(self, loaders: Iterable[Awaitable], sleep_time: int = 1):
         self.has_listeners = asyncio.Event()
         self.stopped = asyncio.Event()
 
         self.listener_queue: Set[asyncio.Queue] = set()
-        self.callbacks = callbacks
+        self.loaders = loaders
         self.sleep_time = sleep_time
 
     @contextmanager
@@ -35,7 +35,7 @@ class ListenerPool:
             if not self.listener_queue:
                 self.has_listeners.clear()
 
-    async def run_loop_for(self, callback: Awaitable):
+    async def run_loop_for(self, loader: Awaitable):
         while not self.stopped.is_set():
             stopped = asyncio.create_task(self.stopped.wait())
             has_listeners = asyncio.create_task(self.has_listeners.wait())
@@ -54,7 +54,7 @@ class ListenerPool:
                 break
 
             try:
-                result = await callback()
+                result = await loader()
 
                 for queue in self.listener_queue:
                     with suppress(asyncio.QueueFull):
@@ -62,15 +62,15 @@ class ListenerPool:
             except GeneratorExit:
                 raise
             except Exception:
-                LOGGER.exception("Failed to get callback data")
+                LOGGER.exception("Failed to get loader data")
 
             await asyncio.sleep(self.sleep_time)
 
     def start(self, *args, **kwargs):
         self.stopped.clear()
 
-        for callback in self.callbacks:
-            asyncio.create_task(self.run_loop_for(callback))
+        for loader in self.loaders:
+            asyncio.create_task(self.run_loop_for(loader))
 
     def stop(self, *args, **kwargs):
         self.stopped.set()
