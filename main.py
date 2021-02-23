@@ -34,13 +34,22 @@ async def index(request):
 
 
 async def start_pools(app):
+    app.logger.info("Starting background workers")
+
     for pool in app["pools"].values():
         pool.start()
+
+
+async def stop_pools(app):
+    app.logger.info("Stopping background workers")
+
+    await asyncio.gather(*(pool.stop() for pool in app["pools"].values()))
 
 
 def build_app():
     app = web.Application()
     app.on_startup.append(start_pools)
+    app.on_shutdown.append(stop_pools)
 
     app.router.add_route("GET", "/results", results)
     app.router.add_route("GET", "/", index)
