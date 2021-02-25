@@ -1,12 +1,13 @@
 import asyncio
 import socket
 from contextlib import asynccontextmanager
-from dataclasses import dataclass
 from datetime import datetime
 from hashlib import md5
-from typing import List, NamedTuple, Optional, Dict
+from typing import NamedTuple, Optional
 from xml.etree import ElementTree
+
 import xmltodict
+from pydantic import BaseModel
 
 from . import dto
 
@@ -50,7 +51,7 @@ class BoincConnection(NamedTuple):
         self.writer.write(request)
         await self.writer.drain()
 
-    async def read_response(self) -> Dict:
+    async def read_response(self) -> dict:
         data = (await self.reader.readuntil(END_CHAR)).strip(END_CHAR)
         parsed = xmltodict.parse(data)
 
@@ -65,18 +66,16 @@ class BoincConnection(NamedTuple):
         return reply_root
 
 
-@dataclass
-class BoincClient:
+class BoincClient(BaseModel):
 
     host: str
     port: int = 31416
     password: Optional[str] = None
     name: Optional[str] = None
 
-    host_info: dto.HostInfo = None
-
-    def __post_init__(self):
-        self.host_info = dto.HostInfo(name=self.name or self.host)
+    @property
+    def host_info(self):
+        return dto.HostInfo(name=self.name or self.host)
 
     @asynccontextmanager
     async def connection(self) -> BoincConnection:

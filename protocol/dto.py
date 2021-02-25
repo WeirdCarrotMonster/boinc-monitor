@@ -1,7 +1,7 @@
-from dataclasses import dataclass
 from datetime import datetime
 from enum import IntEnum
-from typing import List, Optional
+from typing import Optional
+
 from pydantic import BaseModel
 
 
@@ -117,8 +117,8 @@ class Result(BaseModel):
 class SimpleGuiInfo(BaseModel):
 
     host: HostInfo
-    projects: List[ProjectInfo]
-    results: List[Result]
+    projects: list[ProjectInfo]
+    results: list[Result]
 
     class Config:
         extra = "ignore"
