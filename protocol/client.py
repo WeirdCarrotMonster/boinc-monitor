@@ -4,8 +4,9 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from datetime import datetime
 from hashlib import md5
-from typing import List, NamedTuple, Optional
+from typing import List, NamedTuple, Optional, Dict
 from xml.etree import ElementTree
+import xmltodict
 
 from . import dto
 
@@ -49,18 +50,19 @@ class BoincConnection(NamedTuple):
         self.writer.write(request)
         await self.writer.drain()
 
-    async def read_response(self) -> ElementTree.Element:
+    async def read_response(self) -> Dict:
         data = (await self.reader.readuntil(END_CHAR)).strip(END_CHAR)
-        parsed = ElementTree.fromstring(data)
+        parsed = xmltodict.parse(data)
 
-        first_child = parsed[0]
-        if first_child.tag == "unauthorized":
+        reply_root = parsed["boinc_gui_rpc_reply"]
+
+        if "unauthorized" in reply_root:
             raise Unauthorized
 
-        if first_child.tag == "error":
-            raise ResponseError(first_child.text)
+        if "error" in reply_root:
+            raise ResponseError(reply_root["error"])
 
-        return parsed
+        return reply_root
 
 
 @dataclass
@@ -74,7 +76,7 @@ class BoincClient:
     host_info: dto.HostInfo = None
 
     def __post_init__(self):
-        self.host_info = dto.HostInfo(self.name or self.host)
+        self.host_info = dto.HostInfo(name=self.name or self.host)
 
     @asynccontextmanager
     async def connection(self) -> BoincConnection:
@@ -93,7 +95,7 @@ class BoincClient:
         await connection.send_request("auth1", password=self.password)
         response = await connection.read_response()
 
-        nonce = response.find("./nonce").text
+        nonce = response["nonce"]
         password_hash = md5(nonce.encode() + self.password.encode()).hexdigest()
 
         await connection.send_request("auth2", nonce_hash=password_hash)
@@ -107,36 +109,8 @@ class BoincClient:
     async def simple_gui_info(self) -> dto.SimpleGuiInfo:
         response = await self.call_method("get_simple_gui_info")
 
-        results: List[dto.Result] = []
-
-        for result_elem in response.findall("./simple_gui_info/result"):
-            active_task_elem = result_elem.find("./active_task")
-            active_task = dto.ActiveTask(
-                active_task_state=dto.ActiveTaskState(
-                    int(get_value(active_task_elem, "active_task_state"))
-                ),
-                fraction_done=float(get_value(active_task_elem, "fraction_done")),
-                elapsed_time=float(get_value(active_task_elem, "elapsed_time")),
-            )
-            result = dto.Result(
-                name=get_value(result_elem, "name"),
-                wu_name=get_value(result_elem, "wu_name"),
-                platform=get_value(result_elem, "platform"),
-                project_url=get_value(result_elem, "project_url"),
-                final_cpu_time=float(get_value(result_elem, "final_cpu_time")),
-                final_elapsed_time=float(get_value(result_elem, "final_elapsed_time")),
-                estimated_cpu_time_remaining=float(
-                    get_value(result_elem, "estimated_cpu_time_remaining")
-                ),
-                state=dto.ResultState(int(get_value(result_elem, "state"))),
-                received_time=datetime.fromtimestamp(
-                    float(get_value(result_elem, "received_time"))
-                ),
-                report_deadline=datetime.fromtimestamp(
-                    float(get_value(result_elem, "report_deadline"))
-                ),
-                active_task=active_task,
-            )
-            results.append(result)
+        results = [
+            dto.Result(**result) for result in response["simple_gui_info"]["result"]
+        ]
 
         return dto.SimpleGuiInfo(host=self.host_info, projects=[], results=results)

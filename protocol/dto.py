@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import IntEnum
 from typing import List, Optional
+from pydantic import BaseModel
 
 
 class ResultState(IntEnum):
@@ -26,23 +27,28 @@ class ActiveTaskState(IntEnum):
     CopyPending = 10
 
 
-@dataclass(frozen=True)
-class HostInfo:
+class HostInfo(BaseModel):
 
     name: str
+
+    class Config:
+        allow_mutation = False
+        extra = "ignore"
 
     @property
     def asdict(self):
         return {"name": self.name}
 
 
-@dataclass
-class ProjectInfo:
+class ProjectInfo(BaseModel):
 
     project_name: str
     master_url: str
     user_name: str
     team_name: Optional[str] = None
+
+    class Config:
+        extra = "ignore"
 
     @property
     def asdict(self):
@@ -54,12 +60,14 @@ class ProjectInfo:
         }
 
 
-@dataclass
-class ActiveTask:
+class ActiveTask(BaseModel):
 
     active_task_state: ActiveTaskState
     fraction_done: float
     elapsed_time: float
+
+    class Config:
+        extra = "ignore"
 
     @property
     def asdict(self):
@@ -70,8 +78,7 @@ class ActiveTask:
         }
 
 
-@dataclass
-class Result:
+class Result(BaseModel):
 
     name: str
     wu_name: str
@@ -86,6 +93,9 @@ class Result:
     report_deadline: datetime
 
     active_task: ActiveTask
+
+    class Config:
+        extra = "ignore"
 
     @property
     def asdict(self):
@@ -104,12 +114,14 @@ class Result:
         }
 
 
-@dataclass
-class SimpleGuiInfo:
+class SimpleGuiInfo(BaseModel):
 
     host: HostInfo
     projects: List[ProjectInfo]
     results: List[Result]
+
+    class Config:
+        extra = "ignore"
 
     @property
     def asdict(self):
