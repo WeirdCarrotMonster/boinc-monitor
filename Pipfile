@@ -7,6 +7,8 @@ name = "pypi"
 aiohttp = "==3.7.3"
 aiohttp-sse = "==2.0.0"
 environs = "==9.3.0"
+xmltodict = "==0.12.0"
+pydantic = "==1.7.3"
 
 [dev-packages]
 pylint = "==2.6.0"
