@@ -107,9 +107,10 @@ class BoincClient(BaseModel):
 
     async def simple_gui_info(self) -> dto.SimpleGuiInfo:
         response = await self.call_method("get_simple_gui_info")
+        results = response["simple_gui_info"]["result"]
+        if isinstance(results, dict):
+            results = [results]
 
-        results = [
-            dto.Result(**result) for result in response["simple_gui_info"]["result"]
-        ]
+        results = [dto.Result(**result) for result in results]
 
         return dto.SimpleGuiInfo(host=self.host_info, projects=[], results=results)
